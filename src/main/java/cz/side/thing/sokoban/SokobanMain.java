@@ -35,7 +35,7 @@ public final class SokobanMain {
       Map.entry(FieldType.WALL, "█"), Map.entry(FieldType.VOID, " "),
       Map.entry(FieldType.CRATE, "▒"), Map.entry(FieldType.TARGET, "X"),
       Map.entry(FieldType.CRATE_ON_TARGET, "▓"), Map.entry(FieldType.FLOOR, " "),
-      Map.entry(FieldType.PLAYER, "I"));
+      Map.entry(FieldType.PLAYER, "I"), Map.entry(FieldType.PLAYER_ON_TARGET, "T"));
 
   /**
    * Disable creation of instances.
