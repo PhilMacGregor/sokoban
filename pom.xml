@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>cz.side.thing</groupId>
+	<artifactId>sokoban</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<description>TODO: write a description</description>
+	<properties>
+		<!-- common maven properties (do not change) -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>21</java.version>
+		<maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
+		<maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
+		<maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
+		<maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
+		<maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
+		<maven.antrun.plugin.version>3.2.0</maven.antrun.plugin.version>
+		<maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
+		<maven.source.plugin.version>3.4.0</maven.source.plugin.version>
+		<maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
+		<maven-jxr.plugin.version>3.6.0</maven-jxr.plugin.version>
+		<maven.surefire.version>3.5.4</maven.surefire.version>
+		<test.threads>10</test.threads>
+		<spotbugs.maven.version>4.9.8.2</spotbugs.maven.version>
+		<spotbugs-annotations.version>4.9.8</spotbugs-annotations.version>
+		<onejar.version>1.4.4</onejar.version>
+		<jacoco.version>0.8.14</jacoco.version>
+		<license.maven.plugin.version>2.7.0</license.maven.plugin.version>
+		<!-- system library versions -->
+		<lombok.version>1.18.34</lombok.version>
+		<delombok.version>1.18.20.0</delombok.version>
+		<slf4j.version>2.0.7</slf4j.version>
+		<logback.version>1.5.21</logback.version>
+		<junit.jupiter.version>6.0.1</junit.jupiter.version>
+		<!-- Set up your application name -->
+		<program.name>${project.artifactId}</program.name>
+		<!-- Set up install directory -->
+		<install.dir>build-application</install.dir>
+		<!-- Set up full name of the main class -->
+		<main.class>cz.side.thing.mahjong.core.Program</main.class>
+		<!-- 
+        ********************************************************
+        **     TODO: SET UP YOUR VARIABLES                    **
+        ******************************************************** 
+        -->
+		<!-- Change it to lower for snapshots (1.0 means 100% test code coverage) -->
+		<code-coverage>1.0</code-coverage>
+	</properties>
+	<!-- 
+    ************************************************************
+    **               BUILD CONFIGURATION                      **
+    **                   (DO NOT EDIT)                        **
+    ************************************************************ 
+    -->
+	<profiles></profiles>
+	<build>
+		<finalName>${program.name}</finalName>
+		<plugins>
+			<!-- Specify version to use new deploy plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>${maven.deploy.plugin.version}</version>
+			</plugin>
+			<!-- Compilation plugin -->
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven.compiler.plugin.version}</version>
+				<configuration>
+					<!-- Set up java version -->
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<encoding>${project.build.sourceEncoding}</encoding>
+					<!-- Allow parameter names in reflection under java 8 -->
+					<compilerArgs>
+						<arg>${java.compiler.param}</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+			<!-- Enable spotbugs -->
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>${spotbugs.maven.version}</version>
+				<configuration>
+					<!-- Enables analysis which takes more memory but finds more bugs. -->
+					<effort>Max</effort>
+					<!-- Reports all bugs (other values are medium and max) -->
+					<threshold>Low</threshold>
+					<excludeFilterFile>spotbugs-filter.xml</excludeFilterFile>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Testing support -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven.surefire.version}</version>
+				<configuration>
+					<!-- Must be parallel on classes, DO NOT CHANGE -->
+					<parallel>classes</parallel>
+					<!-- we will test in parallel, but only on class level -->
+					<threadCount>${test.threads}</threadCount>
+				</configuration>
+			</plugin>
+			<!-- Fat jar support -->
+			<plugin>
+				<groupId>com.jolira</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>${onejar.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>one-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Copy all dependency libraries to lib folder -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<!-- I really want to override this version -->
+				<version>${maven.dependency.plugin.version}</version>
+				<!--$NO-MVN-MAN-VER$-->
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>install</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeScope>runtime</includeScope>
+							<outputDirectory>${install.dir}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Make JAR executable & add dependencies to classpath -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven.jar.plugin.version}</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>${main.class}</mainClass>
+							<classpathPrefix>lib/</classpathPrefix>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			<!-- Create sources for better debugging and context assist -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven.source.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Create javadoc for help -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven.javadoc.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<!-- Disable doclint checks to build it under java 8
+						javadoc, disable modules for java 11 -->
+						<configuration>
+							<!-- Disable checks to build it under java 8 & 11 -->
+							<detectJavaApiLink>false</detectJavaApiLink>
+							<!-- Use delombok files to generate documentation from 
+							TODO add your own paths to autogenerated sources 
+							<sourcepath>target/generated-sources/delombok:src/generated/java</sourcepath>
+							-->
+							<sourcepath>src/main/java:src/generated/java</sourcepath>
+							<!-- Disable documentation for certain packages.
+							TODO add your own packages -->
+							<excludePackageNames></excludePackageNames>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Delombok source code for javadoc 
+			<plugin>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok-maven-plugin</artifactId>
+				<version>${delombok.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>delombok</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<addOutputDirectory>false</addOutputDirectory>
+					<sourceDirectory>src/main/java</sourceDirectory>
+				</configuration>
+			</plugin>
+			-->
+			<!-- Copy files via ant task -->
+			<plugin>
+				<!-- Copy created application into install directory -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<!-- I really want to override this version -->
+				<version>${maven.antrun.plugin.version}</version>
+				<!--$NO-MVN-MAN-VER$-->
+				<executions>
+					<execution>
+						<id>copy jars</id>
+						<phase>install</phase>
+						<configuration>
+							<target>
+								<copy 
+									file="${project.basedir}/target/${program.name}.one-jar.jar" 
+									tofile="${install.dir}/onejar/${program.name}.jar"/>
+								<copy 
+									file="${project.basedir}/target/${program.name}.jar" 
+									tofile="${install.dir}/${program.name}.jar"/>
+								<copy 
+									file="${project.basedir}/target/${program.name}-javadoc.jar" 
+									tofile="${install.dir}/${program.name}-javadoc.jar"/>
+								<copy
+									file="${project.basedir}/target/${program.name}-sources.jar"
+									tofile="${install.dir}/${program.name}-sources.jar" />
+								<copy 
+									file="${project.basedir}/scripts/linux.sh" 
+									tofile="${install.dir}/${program.name}.sh"/>
+								<copy 
+									file="${project.basedir}/scripts/windows.bat" 
+									tofile="${install.dir}/${program.name}.bat"/>
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Clean also install folder -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>${maven.clean.plugin.version}</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${install.dir}</directory>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+						<fileset>
+							<directory>log</directory>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+						<fileset>
+							<directory>test-output</directory>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<!-- Check test code coverage -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<!-- 
+                    TODO Add your own expceptions to code coverage 
+                    NOTE Every exclusion must be commented with an exclusion reason.
+                    -->
+					<excludes>
+						<exclude>**/core/*</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- attached to Maven test phase -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<!-- Add this coverage checking -->
+					<execution>
+						<id>jacoco-check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>PACKAGE</element>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${code-coverage}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<version>${maven-jxr.plugin.version}</version>
+			</plugin>
+		</plugins>
+	</reporting>
+	<!-- 
+      *****************************************************
+      **         LIBRARIES SET-UP                        **
+      ***************************************************** 
+    -->
+	<dependencies>
+    <!-- 
+      *************************************************** 
+      **           LOMBOK & JUNIT & SYSTEM            **
+      **            (DO NOT EDIT)                      **
+      *************************************************** 
+    -->
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>${spotbugs-annotations.version}</version>
+			<optional>true</optional>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- 
+          ******************************************************* 
+          **          LOGGING DEPENDENCIES                     ** 
+          **              (DO NOT EDIT)                        **
+          *******************************************************
+        -->
+		<!-- We are using slf4j as a logging facade to compile against. 
+         Logging implementation to use is logback -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<!-- LogBack dependency -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
+		<!-- 
+          ********************************************************************** 
+          **                USER LIBRARIES                                    **
+          ********************************************************************** 
+        -->
+		<!-- TODO: Here to add your own dependencies -->
+		<!-- NOTE: Only dependencies with allowed licenses can be used. -->
+		<!-- TODO: Build project and check newly added license in src/main/resources/licenses -->
+	</dependencies>
+</project>
