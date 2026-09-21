@@ -21,7 +21,7 @@ public class BoardState {
   
   private static final String CRLF = "\r\n";
   
-  private static final String CRLF_REGEX = "[\\r\\n]+";
+  private static final String CRLF_REGEX = "[\\r\\n|]+";
   
   private static final Map<Integer, FieldType> CHARS_TO_FIELDS = FieldType.getMap();
   
@@ -67,6 +67,10 @@ public class BoardState {
   
   public Field getAt(final int x, final int y) {
     return fields.get(x, y);
+  }
+
+  public Field getNeighbor(final Field origin, final Point direction) {
+    return getAt(origin.coords().transpose(direction));
   }
   
   public Collection<Field> searchFor(final FieldType... types) {
@@ -150,7 +154,7 @@ public class BoardState {
     }
     
     public Point transpose(final Point other) {
-      return transpose(this.x + other.x, this.y + other.y);
+      return transpose(other.x, other.y);
     }
     
     @Override
@@ -168,6 +172,10 @@ public class BoardState {
     
     public static Fields empty() {
       return new Fields(Map.of());
+    }
+    
+    public Map<Integer, Map<Integer, Field>> fields() {
+      return copyFields(fields);
     }
     
     public Field get(final int x, final int y) {
