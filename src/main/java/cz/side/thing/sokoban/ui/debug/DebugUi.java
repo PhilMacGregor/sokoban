@@ -10,6 +10,7 @@ import cz.side.thing.sokoban.core.BoardState.Field;
 import cz.side.thing.sokoban.core.FieldType;
 import cz.side.thing.sokoban.core.Input;
 import cz.side.thing.sokoban.core.SokobanProcessor;
+import cz.side.thing.sokoban.ui.common.Ui;
 import cz.side.thing.sokoban.ui.common.UiException;
 import lombok.Cleanup;
 

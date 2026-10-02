@@ -1,4 +1,4 @@
-package cz.side.thing.mahjong.test;
+package cz.side.thing.sokoban.test;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

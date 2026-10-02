@@ -19,12 +19,12 @@
     <!--See http://logback.qos.ch/manual/appenders.html#RollingFileAppender-->
     <!--and http://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy-->
     <!--for further documentation-->
-    <File>logs/mahjong.log</File>
+    <File>logs/sokoban.log</File>
     <encoder>
       <pattern>${LOG_PATTERN}</pattern>
     </encoder>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>logs/mahjong.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>logs/sokoban.%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>40</maxHistory>
     </rollingPolicy>
   </appender>

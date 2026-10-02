@@ -11,9 +11,10 @@ import cz.side.thing.sokoban.core.SokobanProcessor;
 import cz.side.thing.sokoban.ui.cmd.WindowsInput.Key;
 import cz.side.thing.sokoban.ui.common.IncompatibleUIException;
 import cz.side.thing.sokoban.ui.common.UiException;
+import cz.side.thing.sokoban.ui.common.Ui;
 import lombok.Cleanup;
 
-public class CmdUi {
+public class CmdUi implements Ui {
   
   private static final Map<FieldType, String> SPRITES = Map.ofEntries(
       Map.entry(FieldType.WALL, "█"), Map.entry(FieldType.VOID, " "),
@@ -36,6 +37,7 @@ public class CmdUi {
     this.board = processor.initialize(map);
   }
 
+  @Override
   public void play() throws UiException {
     try {
       @Cleanup

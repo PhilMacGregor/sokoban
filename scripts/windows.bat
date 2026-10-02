@@ -1,1 +1,1 @@
-java -jar  mahjong.jar %* 
+java -jar  sokoban.jar %* 

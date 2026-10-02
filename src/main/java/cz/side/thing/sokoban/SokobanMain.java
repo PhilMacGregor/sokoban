@@ -2,8 +2,8 @@ package cz.side.thing.sokoban;
 
 import cz.side.thing.sokoban.ui.cmd.CmdUi;
 import cz.side.thing.sokoban.ui.common.IncompatibleUIException;
+import cz.side.thing.sokoban.ui.common.Ui;
 import cz.side.thing.sokoban.ui.debug.DebugUi;
-import cz.side.thing.sokoban.ui.debug.Ui;
 import lombok.extern.slf4j.Slf4j;
 
 /**
