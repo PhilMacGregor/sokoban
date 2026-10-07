@@ -37,7 +37,7 @@ public class DebugUi implements Ui {
   }
 
   @Override
-  public void play() throws UiException {
+  public void start() throws UiException {
     try {
       @Cleanup
       final Scanner scan = new Scanner(System.in, Charset.defaultCharset());

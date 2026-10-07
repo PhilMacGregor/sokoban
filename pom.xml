@@ -271,6 +271,12 @@
                                 <copy
                                     file="${project.basedir}/scripts/windows.bat"
                                     tofile="${install.dir}/${program.name}.bat" />
+                                <copy todir="${install.dir}/maps">
+                                    <fileset dir="${project.basedir}/maps" />
+                                </copy>
+                                <copy todir="${install.dir}/onejar/maps">
+                                    <fileset dir="${project.basedir}/maps" />
+                                </copy>
                             </target>
                         </configuration>
                         <goals>
@@ -436,6 +442,18 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna-platform</artifactId>
             <version>5.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>5.17.0</version>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.21.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

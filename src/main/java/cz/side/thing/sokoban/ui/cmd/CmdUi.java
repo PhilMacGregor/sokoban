@@ -10,8 +10,8 @@ import cz.side.thing.sokoban.core.Input;
 import cz.side.thing.sokoban.core.SokobanProcessor;
 import cz.side.thing.sokoban.ui.cmd.WindowsInput.Key;
 import cz.side.thing.sokoban.ui.common.IncompatibleUIException;
-import cz.side.thing.sokoban.ui.common.UiException;
 import cz.side.thing.sokoban.ui.common.Ui;
+import cz.side.thing.sokoban.ui.common.UiException;
 import lombok.Cleanup;
 
 public class CmdUi implements Ui {
@@ -21,7 +21,7 @@ public class CmdUi implements Ui {
       Map.entry(FieldType.CRATE, "▒"), Map.entry(FieldType.TARGET, "X"),
       Map.entry(FieldType.CRATE_ON_TARGET, "▓"), Map.entry(FieldType.FLOOR, " "),
       Map.entry(FieldType.PLAYER, "I"), Map.entry(FieldType.PLAYER_ON_TARGET, "T"));
-
+  
   private static final Map<Key, Input> INPUTS = Map.of(Key.UP, Input.UP, Key.DOWN, Input.DOWN,
       Key.LEFT, Input.LEFT, Key.RIGHT, Input.RIGHT);
   
@@ -36,21 +36,28 @@ public class CmdUi implements Ui {
     this.processor = new SokobanProcessor();
     this.board = processor.initialize(map);
   }
-
+  
   @Override
-  public void play() throws UiException {
+  public void start() throws UiException {
     try {
       @Cleanup
       final WindowsInput in = new WindowsInput();
       
       BoardState board = this.board;
-      drawBoard(board);
       
       while (!board.isWon()) {
+        drawBoard(board);
+        
         final Key key = in.readKey();
         
         if (key == Key.ESC) {
           break;
+        }
+        
+        if (key == Key.F5) {
+          System.out.println("RELOADING");
+          board = this.board;
+          continue;
         }
         
         if (key == Key.OTHER) {
@@ -58,7 +65,6 @@ public class CmdUi implements Ui {
         }
         
         board = processor.play(board, INPUTS.get(key));
-        drawBoard(board);
       }
       
       System.out.println("");
@@ -68,25 +74,25 @@ public class CmdUi implements Ui {
       System.out.println("----------------------");
       System.out.println("");
       System.out.println("");
-
+      
     } catch (final IncompatibleUIException e) {
       throw e;
     } catch (final Exception e) {
       throw new UiException(e);
     }
-
+    
   }
-
+  
   private void drawBoard(final BoardState board1) {
     clearScreen();
     
     for (final List<Field> row : board1.getFields()) {
-
+      
       final StringBuilder str = new StringBuilder();
       row.forEach(it -> str.append(SPRITES.get(it.type())));
       
       System.out.println(str);
-
+      
     }
   }
   
@@ -94,5 +100,5 @@ public class CmdUi implements Ui {
     System.out.print("\033[H\033[2J");
     System.out.flush();
   }
-
+  
 }

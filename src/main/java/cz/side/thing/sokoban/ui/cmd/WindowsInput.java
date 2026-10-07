@@ -21,13 +21,14 @@ public class WindowsInput implements AutoCloseable {
   private static final short VK_UP = 0x26;
   private static final short VK_RIGHT = 0x27;
   private static final short VK_DOWN = 0x28;
+  private static final short VK_F5 = 0x74;
   
   private final HANDLE consoleInput;
   private final int originalConsoleMode;
   
   public WindowsInput() throws IncompatibleUIException {
     consoleInput = Kernel32.INSTANCE.GetStdHandle(STD_INPUT_HANDLE);
-
+    
     if (consoleInput == null) {
       throw new IncompatibleUIException("Cannot get console input handle.");
     }
@@ -97,6 +98,7 @@ public class WindowsInput implements AutoCloseable {
         case VK_LEFT -> Key.LEFT;
         case VK_RIGHT -> Key.RIGHT;
         case VK_ESCAPE -> Key.ESC;
+        case VK_F5 -> Key.F5;
       
         default -> Key.OTHER;
       };
@@ -109,7 +111,7 @@ public class WindowsInput implements AutoCloseable {
   }
   
   public enum Key {
-    UP, DOWN, LEFT, RIGHT, ESC, OTHER
+    UP, DOWN, LEFT, RIGHT, ESC, F5, OTHER
   }
   
 }
