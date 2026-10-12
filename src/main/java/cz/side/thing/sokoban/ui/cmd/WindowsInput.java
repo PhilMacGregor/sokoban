@@ -1,5 +1,8 @@
 package cz.side.thing.sokoban.ui.cmd;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
 import com.sun.jna.platform.win32.Wincon;
@@ -7,21 +10,28 @@ import com.sun.jna.ptr.IntByReference;
 
 import cz.side.thing.sokoban.ui.common.IncompatibleUIException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "WIP. To be refactored later.")
 public class WindowsInput implements AutoCloseable {
   
-  private static final int STD_INPUT_HANDLE = -10;
-  
-  private static final int ENABLE_EXTENDED_FLAGS = 0x0080;
-  private static final int ENABLE_QUICK_EDIT_MODE = 0x0040;
-  
+  private static final short VK_NULL = 0x00;
   private static final short VK_ESCAPE = 0x1B;
   private static final short VK_LEFT = 0x25;
   private static final short VK_UP = 0x26;
   private static final short VK_RIGHT = 0x27;
   private static final short VK_DOWN = 0x28;
   private static final short VK_F5 = 0x74;
+  private static final short VK_Y = 0x59;
+  private static final short VK_Z = 0x5A;
+  private static final short VK_PGUP = 0x21;
+  private static final short VK_PGDOWN = 0x22;
+  
+  private static final int STD_INPUT_HANDLE = -10;
+  
+  private static final int ENABLE_EXTENDED_FLAGS = 0x0080;
+  private static final int ENABLE_QUICK_EDIT_MODE = 0x0040;
   
   private final HANDLE consoleInput;
   private final int originalConsoleMode;
@@ -91,17 +101,8 @@ public class WindowsInput implements AutoCloseable {
         continue;
       }
       
-      return switch (keyEvent.wVirtualKeyCode) {
-        
-        case VK_UP -> Key.UP;
-        case VK_DOWN -> Key.DOWN;
-        case VK_LEFT -> Key.LEFT;
-        case VK_RIGHT -> Key.RIGHT;
-        case VK_ESCAPE -> Key.ESC;
-        case VK_F5 -> Key.F5;
+      return Key.fromCode(keyEvent.wVirtualKeyCode);
       
-        default -> Key.OTHER;
-      };
     }
   }
   
@@ -110,8 +111,19 @@ public class WindowsInput implements AutoCloseable {
     Kernel32.INSTANCE.SetConsoleMode(consoleInput, originalConsoleMode);
   }
   
+  @RequiredArgsConstructor
+  @Getter
   public enum Key {
-    UP, DOWN, LEFT, RIGHT, ESC, F5, OTHER
+    UP(VK_UP), DOWN(VK_DOWN), LEFT(VK_LEFT), RIGHT(VK_RIGHT), ESC(VK_ESCAPE), F5(VK_F5),
+    OTHER(VK_NULL), Y(VK_Y), Z(VK_Z), PG_UP(VK_PGUP), PG_DOWN(VK_PGDOWN);
+    
+    private final short code;
+    
+    public static Key fromCode(final short code) {
+      return Arrays.stream(values()).filter(it -> Objects.equals(it.getCode(), code)).findFirst()
+          .orElse(OTHER);
+    }
+    
   }
   
 }

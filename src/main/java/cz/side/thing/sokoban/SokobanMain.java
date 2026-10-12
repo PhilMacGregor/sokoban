@@ -6,14 +6,23 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
 
 import cz.side.thing.sokoban.ui.cmd.CmdUi;
 import cz.side.thing.sokoban.ui.common.IncompatibleUIException;
+import cz.side.thing.sokoban.ui.common.PlayResult;
 import cz.side.thing.sokoban.ui.common.Ui;
 import cz.side.thing.sokoban.ui.common.UiException;
 import cz.side.thing.sokoban.ui.debug.DebugUi;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,11 +33,17 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public final class SokobanMain {
-
+  
   private static final String MAPS_DIR_PROPERTY = "sokoban.maps.dir";
-
+  
   private static final String MAPS_DIR = "maps/original";
-
+  
+  private static final List<String> MAPS_NAMES = new ArrayList<>();
+  
+  private static final Map<String, String> MAPS_RESOLVED = new HashMap<>();
+  
+  private static final Collection<String> MAPS_COMPLETED = new HashSet<>();
+  
   /**
    * Sample main method.
    *
@@ -38,22 +53,84 @@ public final class SokobanMain {
     try {
       
       final Path mapsPath = resolveMapsPath();
-
-      try (Stream<Path> maps = Files.list(mapsPath)) {
-        maps.filter(Files::isRegularFile).sorted().forEachOrdered(SokobanMain::playMap);
+      
+      try (final Stream<Path> maps = Files.list(mapsPath)) {
+        maps.filter(Files::isRegularFile).sorted().forEachOrdered(it -> {
+          try {
+            
+            final String filename = getFilename(it);
+            if (StringUtils.isEmpty(filename)) {
+              throw new IllegalArgumentException();
+            }
+            
+            MAPS_NAMES.add(filename);
+            MAPS_RESOLVED.put(filename, Files.readString(it));
+            
+          } catch (final IOException e) {
+            throw new IllegalArgumentException(e);
+          }
+        });
       }
+      
+      int index = 0;
+      
+      while (index < MAPS_NAMES.size()) {
+        
+        final String name = MAPS_NAMES.get(index);
+        final String content = MAPS_RESOLVED.get(name);
+        
+        final PlayResult result = playMap(name, content, MAPS_COMPLETED.contains(name));
+        
+        switch (result) {
+          case NEXT_MAP -> index++;
+          case PREVIOUS_MAP -> index = index == 0 ? index : index - 1;
+          case VICTORY -> {
+            MAPS_COMPLETED.add(name);
+            index++;
+          }
+        }
+        
+        if (MAPS_COMPLETED.size() == MAPS_NAMES.size()) {
+          break;
+        }
+        
+        if (index >= MAPS_NAMES.size()) {
+          final String lowesIncomplete = findLowestIncompleteMap();
+          index = MAPS_NAMES.indexOf(lowesIncomplete);
+        }
+        
+      }
+      
+      System.out.printf("------------------------------------%n");
+      System.out.printf("ALL MAPS COMPLETE!%n");
+      System.out.printf("------------------------------------%n");
       
     } catch (final Throwable ex) {
       log.error("The application ended with error", ex);
       System.exit(1);
     }
   }
-
+  
+  private static String findLowestIncompleteMap() {
+    for (final String name : MAPS_NAMES) {
+      if (!MAPS_COMPLETED.contains(name)) {
+        return name;
+      }
+    }
+    return StringUtils.EMPTY;
+  }
+  
+  private static String getFilename(final Path path) {
+    return Optional.ofNullable(path).map(Path::getFileName).map(Path::toString)
+        .orElse(StringUtils.EMPTY);
+  }
+  
   /**
-   * Finds the maps directory. Order: system property {@value #MAPS_DIR_PROPERTY}, then
-   * {@value #MAPS_DIR} relative to the working directory, then {@value #MAPS_DIR} in any parent
-   * of the location the classes were loaded from (e.g. project root when running from IDE, where
-   * the working directory may be the workspace root).
+   * Finds the maps directory. Order: system property {@value #MAPS_DIR_PROPERTY},
+   * then {@value #MAPS_DIR} relative to the working directory, then
+   * {@value #MAPS_DIR} in any parent of the location the classes were loaded from
+   * (e.g. project root when running from IDE, where the working directory may be
+   * the workspace root).
    */
   private static Path resolveMapsPath() throws URISyntaxException {
     final String configured = System.getProperty(MAPS_DIR_PROPERTY);
@@ -64,12 +141,12 @@ public final class SokobanMain {
       }
       return path;
     }
-
+    
     final Path workingDirMaps = Path.of(MAPS_DIR);
     if (Files.isDirectory(workingDirMaps)) {
       return workingDirMaps;
     }
-
+    
     final CodeSource codeSource = SokobanMain.class.getProtectionDomain().getCodeSource();
     if (codeSource != null) {
       final URI location = codeSource.getLocation().toURI();
@@ -82,33 +159,27 @@ public final class SokobanMain {
         }
       }
     }
-
-    throw new IllegalStateException(
-        "Maps directory not found: " + workingDirMaps.toAbsolutePath());
+    
+    throw new IllegalStateException("Maps directory not found: " + workingDirMaps.toAbsolutePath());
   }
   
-  @SuppressFBWarnings(value = "THROWS_METHOD_THROWS_RUNTIMEEXCEPTION", justification = """
-      Needed for usage inside a Stream.
-      """)
-  private static void playMap(final Path map) {
-    System.out.printf("------------------------------------%n", map.getFileName());
-    System.out.printf("MAP %s%n", map.getFileName());
-    System.out.printf("------------------------------------%n", map.getFileName());
+  private static PlayResult playMap(final String name, final String content,
+      final boolean isCompleted) {
+    System.out.printf("------------------------------------%n");
+    System.out.printf("MAP %s%n", name);
+    System.out.printf("------------------------------------%n");
     
     try {
-      final String content = Files.readString(map);
-      
       try {
-        final CmdUi ui = new CmdUi(content);
-        ui.start();
+        final CmdUi ui = new CmdUi(name, content, isCompleted);
+        return ui.start();
       } catch (final IncompatibleUIException ex) {
         log.error("Unable to load console interface. Running in fallback mode...", ex);
         final Ui ui = new DebugUi(content);
-        ui.start();
+        return ui.start();
       }
-      
-    } catch (final UiException | IOException e) {
-      throw new RuntimeException(e);
+    } catch (final UiException e) {
+      throw new IllegalStateException(e);
     }
     
   }

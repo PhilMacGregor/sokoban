@@ -68,7 +68,7 @@ public class BoardState {
   public Field getAt(final int x, final int y) {
     return fields.get(x, y);
   }
-
+  
   public Field getNeighbor(final Field origin, final Point direction) {
     return getAt(origin.coords().transpose(direction));
   }
@@ -118,7 +118,7 @@ public class BoardState {
     final String[] rowsToParse = stringToParse.split(CRLF_REGEX);
     
     final Collection<Field> fields = new ArrayList<>();
-
+    
     for (int y = 0; y < rowsToParse.length; y++) {
       final String rowToParse = rowsToParse[y];
       
@@ -132,10 +132,24 @@ public class BoardState {
         
         fields.add(new Field(CHARS_TO_FIELDS.get(it), new Point(x++, y)));
       }
-
+      
     }
     
     return Fields.empty().set(fields);
+  }
+  
+  @Override
+  public int hashCode() {
+    return this.toString().hashCode();
+  }
+  
+  @Override
+  public boolean equals(final Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    
+    return Objects.equals(this.toString(), obj.toString());
   }
   
   public record Field(FieldType type, Point coords) implements Comparable<Field> {
@@ -249,9 +263,9 @@ public class BoardState {
     
     public static Map<Integer, Map<Integer, Field>> copyFields(
         final Map<Integer, Map<Integer, Field>> original) {
-
+      
       final Map<Integer, Map<Integer, Field>> newMap = new HashMap<>();
-
+      
       for (final Entry<Integer, Map<Integer, Field>> row : original.entrySet()) {
         newMap.put(row.getKey(), Map.copyOf(row.getValue()));
       }
@@ -262,14 +276,14 @@ public class BoardState {
     @Override
     public Iterator<List<Field>> iterator() {
       final List<List<Field>> ret = new ArrayList<>();
-
+      
       final TreeMap<Integer, Map<Integer, Field>> sortedY = new TreeMap<>(fields());
       if (sortedY.isEmpty()) {
         return List.copyOf(ret).iterator();
       }
-
+      
       for (int y = sortedY.firstKey(); y <= sortedY.lastKey(); y++) {
-
+        
         if (!sortedY.containsKey(y)) {
           ret.add(List.of());
         }
@@ -279,23 +293,23 @@ public class BoardState {
           ret.add(List.of());
           continue;
         }
-
+        
         final List<Field> row = new ArrayList<>();
         
         for (int x = sortedX.firstKey(); x <= sortedX.lastKey(); x++) {
-
+          
           if (!sortedX.containsKey(x)) {
             row.add(new Field(FieldType.VOID, new Point(x, y)));
           }
-
+          
           row.add(sortedX.get(x));
-
+          
         }
         
         ret.add(List.copyOf(row));
-
+        
       }
-
+      
       return List.copyOf(ret).iterator();
     }
     
