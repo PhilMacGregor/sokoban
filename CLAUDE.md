@@ -30,11 +30,16 @@ Two layers: an immutable game core and interchangeable console UIs.
 - `Input` enum carries a direction `Point`.
 
 **`ui` — rendering and input loops**
-- `ui.cmd.CmdUi` — primary UI: reads arrow keys/ESC directly via the Windows console API (`WindowsInput`, using JNA `Kernel32`), draws with ANSI clear-screen and block-character sprites. Windows-only; throws `IncompatibleUIException` when no Windows console is available (e.g. IDE consoles, non-Windows).
-- `ui.debug.DebugUi` — fallback line-based UI (`w/a/s/d` or `up/down/left/right` + Enter) via `Scanner`; implements the `Ui` interface.
-- `SokobanMain` tries `CmdUi` and falls back to `DebugUi` on `IncompatibleUIException`. The level is currently a hard-coded text block (`MAP1`).
+- `ui.cmd.CmdUi` — primary UI: reads keys directly via the Windows console API (`WindowsInput`, using JNA `Kernel32`, quick edit mode disabled while playing), draws with ANSI clear-screen and block-character sprites. Controls: arrows move, `Y`/`Z` undo (a `Deque` of previous `BoardState`s, only real moves are stored), `F5` restart (clears undo), `PgUp`/`Esc` next map, `PgDown` previous map. Windows-only; throws `IncompatibleUIException` when no Windows console is available (e.g. IDE consoles, non-Windows).
+- `ui.debug.DebugUi` — fallback line-based UI (`w/a/s/d` or `up/down/left/right` + Enter) via `Scanner`; no undo or map navigation, always returns `VICTORY`.
+- Both implement `ui.common.Ui`; `start()` returns a `PlayResult` (`NEXT_MAP`, `PREVIOUS_MAP`, `VICTORY`).
 
-`maps.txt` contains additional levels in the same character format, separated by blank lines; loading them is not yet implemented.
+**`SokobanMain` — map loading and level loop**
+- Loads every file in the maps directory, sorted by file name (`maps/original/01.map`, …). Directory lookup: system property `sokoban.maps.dir`, then `maps/original` relative to the working directory, then `maps/original` in any parent of the class location.
+- Plays maps in order according to the `PlayResult`; solved maps are tracked for the run (shown as "THIS MAP WAS COMPLETED"). After the last map it continues with the first unsolved one; the game ends when all maps are solved.
+- Each map tries `CmdUi` and falls back to `DebugUi` on `IncompatibleUIException`.
+
+`maps/original` contains 60 `*.map` files split from `src/test/resources/maps.txt` (levels separated by blank lines; the split code is commented out in `SampleTest`). `maps/custom` is currently empty.
 
 ## Code style
 

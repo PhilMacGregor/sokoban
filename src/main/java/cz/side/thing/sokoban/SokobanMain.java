@@ -26,28 +26,39 @@ import cz.side.thing.sokoban.ui.debug.DebugUi;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Sample program for maven Java build. TODO: Change it to your needs.
+ * Entry point of the console Sokoban game.
  *
- * @author maven-archetype-generated
+ * <p>
+ * Loads all map files from the maps directory (see {@link #resolveMapsPath()}), sorted by file
+ * name, and lets the player go through them. Each map is played in {@link CmdUi}; when the
+ * Windows console is not available, {@link DebugUi} is used instead. The game ends once every
+ * map has been solved.
  *
+ * @author MacGregor
  */
 @Slf4j
 public final class SokobanMain {
   
+  /** System property that overrides the maps directory. */
   private static final String MAPS_DIR_PROPERTY = "sokoban.maps.dir";
   
+  /** Default maps directory, relative to the working directory or the project root. */
   private static final String MAPS_DIR = "maps/original";
   
+  /** Map names (file names) in play order. */
   private static final List<String> MAPS_NAMES = new ArrayList<>();
   
+  /** Map contents keyed by map name. */
   private static final Map<String, String> MAPS_RESOLVED = new HashMap<>();
   
+  /** Names of maps solved during this run. */
   private static final Collection<String> MAPS_COMPLETED = new HashSet<>();
   
   /**
-   * Sample main method.
+   * Loads the maps and runs the game loop until all maps are solved. Exits with status
+   * {@code 1} on any error.
    *
-   * @param args program arguments
+   * @param args program arguments (not used)
    */
   public static void main(final String[] args) {
     try {
@@ -72,6 +83,7 @@ public final class SokobanMain {
         });
       }
       
+      // Index of the map currently being played in MAPS_NAMES.
       int index = 0;
       
       while (index < MAPS_NAMES.size()) {
@@ -81,6 +93,7 @@ public final class SokobanMain {
         
         final PlayResult result = playMap(name, content, MAPS_COMPLETED.contains(name));
         
+        // PREVIOUS_MAP on the first map stays on the first map.
         switch (result) {
           case NEXT_MAP -> index++;
           case PREVIOUS_MAP -> index = index == 0 ? index : index - 1;
@@ -94,6 +107,7 @@ public final class SokobanMain {
           break;
         }
         
+        // After the last map, continue with the first map that has not been solved yet.
         if (index >= MAPS_NAMES.size()) {
           final String lowesIncomplete = findLowestIncompleteMap();
           index = MAPS_NAMES.indexOf(lowesIncomplete);
@@ -111,6 +125,11 @@ public final class SokobanMain {
     }
   }
   
+  /**
+   * Finds the first map (in play order) that has not been solved yet.
+   *
+   * @return map name, or an empty string when all maps are solved
+   */
   private static String findLowestIncompleteMap() {
     for (final String name : MAPS_NAMES) {
       if (!MAPS_COMPLETED.contains(name)) {
@@ -120,6 +139,12 @@ public final class SokobanMain {
     return StringUtils.EMPTY;
   }
   
+  /**
+   * Returns the file name of a path.
+   *
+   * @param path path to take the name from
+   * @return file name, or an empty string when the path is {@code null} or has no name
+   */
   private static String getFilename(final Path path) {
     return Optional.ofNullable(path).map(Path::getFileName).map(Path::toString)
         .orElse(StringUtils.EMPTY);
@@ -131,6 +156,11 @@ public final class SokobanMain {
    * {@value #MAPS_DIR} in any parent of the location the classes were loaded from
    * (e.g. project root when running from IDE, where the working directory may be
    * the workspace root).
+   *
+   * @return existing maps directory
+   * @throws IllegalStateException when no maps directory is found, or the directory given by
+   *         the system property does not exist
+   * @throws URISyntaxException when the class location cannot be converted to a URI
    */
   private static Path resolveMapsPath() throws URISyntaxException {
     final String configured = System.getProperty(MAPS_DIR_PROPERTY);
@@ -163,6 +193,16 @@ public final class SokobanMain {
     throw new IllegalStateException("Maps directory not found: " + workingDirMaps.toAbsolutePath());
   }
   
+  /**
+   * Plays one map, preferring {@link CmdUi} and falling back to {@link DebugUi} when the
+   * Windows console is not available.
+   *
+   * @param name map name
+   * @param content map string
+   * @param isCompleted whether the map was already solved in this run
+   * @return how the map was finished
+   * @throws IllegalStateException when the interface fails
+   */
   private static PlayResult playMap(final String name, final String content,
       final boolean isCompleted) {
     System.out.printf("------------------------------------%n");

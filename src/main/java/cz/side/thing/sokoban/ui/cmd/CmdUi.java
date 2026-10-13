@@ -19,6 +19,20 @@ import cz.side.thing.sokoban.ui.common.Ui;
 import cz.side.thing.sokoban.ui.common.UiException;
 import lombok.Cleanup;
 
+/**
+ * Primary console interface. Reads single key presses directly from the Windows
+ * console (see {@link WindowsInput}) and redraws the board after every key.
+ *
+ * <p>
+ * Controls:
+ * <ul>
+ * <li>arrow keys - move the player</li>
+ * <li>{@code Y} / {@code Z} - undo the last move</li>
+ * <li>{@code F5} - restart the map</li>
+ * <li>{@code Page Up} / {@code Esc} - skip to the next map</li>
+ * <li>{@code Page Down} - go to the previous map</li>
+ * </ul>
+ */
 public class CmdUi implements Ui {
   
   private static final Map<FieldType, String> SPRITES = Map.ofEntries(
@@ -34,12 +48,21 @@ public class CmdUi implements Ui {
   
   private final boolean isCompleted;
   
+  /** Initial board of the map, used for restart. */
   private final BoardState board;
   
   private final SokobanProcessor processor;
   
+  /** Undo history; the most recent state is at the end. */
   private final Deque<BoardState> previousStates;
   
+  /**
+   * Creates the interface for one map.
+   *
+   * @param name        map name shown below the board
+   * @param content     map string, see {@link BoardState}
+   * @param isCompleted whether the map was already solved in this session
+   */
   public CmdUi(final String name, final String content, final boolean isCompleted) {
     this.processor = new SokobanProcessor();
     this.name = name;
@@ -48,6 +71,11 @@ public class CmdUi implements Ui {
     this.previousStates = new LinkedList<>();
   }
   
+  /**
+   * {@inheritDoc}
+   *
+   * @throws IncompatibleUIException when the Windows console is not available
+   */
   @Override
   public PlayResult start() throws UiException {
     try {
@@ -61,6 +89,7 @@ public class CmdUi implements Ui {
         
         final Key key = in.readKey();
         
+        // Restart - back to the initial board, undo history is discarded.
         if (key == Key.F5) {
           System.out.println("RELOADING");
           board = this.board;
@@ -68,6 +97,7 @@ public class CmdUi implements Ui {
           continue;
         }
         
+        // Undo - both Y and Z are accepted to work with QWERTY and QWERTZ layouts.
         if (key == Key.Y || key == Key.Z) {
           
           if (!previousStates.isEmpty()) {
@@ -78,12 +108,12 @@ public class CmdUi implements Ui {
           
         }
         
-        if (key == Key.PG_UP || key == Key.ESC) {
-          return PlayResult.NEXT_MAP;
+        if (key == Key.PG_UP) {
+          return PlayResult.PREVIOUS_MAP;
         }
         
-        if (key == Key.PG_DOWN) {
-          return PlayResult.PREVIOUS_MAP;
+        if (key == Key.PG_DOWN || key == Key.ESC) {
+          return PlayResult.NEXT_MAP;
         }
         
         if (key == Key.OTHER) {
@@ -91,6 +121,8 @@ public class CmdUi implements Ui {
         }
         
         BoardState newBoard = processor.play(board, INPUTS.get(key));
+        // Blocked moves (into a wall etc.) are not stored, so undo always reverts a
+        // real move.
         if (!newBoard.equals(board)) {
           previousStates.addLast(board);
         }
@@ -110,6 +142,7 @@ public class CmdUi implements Ui {
       return PlayResult.VICTORY;
       
     } catch (final IncompatibleUIException e) {
+      // Rethrown unwrapped so the caller can switch to the fallback interface.
       throw e;
     } catch (final Exception e) {
       throw new UiException(e);
@@ -117,6 +150,9 @@ public class CmdUi implements Ui {
     
   }
   
+  /**
+   * Clears the console and prints the board followed by the map name.
+   */
   private void drawBoard(final BoardState board1) {
     clearScreen();
     
@@ -133,6 +169,9 @@ public class CmdUi implements Ui {
     
   }
   
+  /**
+   * Clears the console using ANSI escape sequences (cursor home + erase screen).
+   */
   private void clearScreen() {
     System.out.print("\033[H\033[2J");
     System.out.flush();

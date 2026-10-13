@@ -15,6 +15,14 @@ import cz.side.thing.sokoban.ui.common.Ui;
 import cz.side.thing.sokoban.ui.common.UiException;
 import lombok.Cleanup;
 
+/**
+ * Fallback line-based interface that works in any console, including IDE consoles.
+ *
+ * <p>
+ * Each move is entered as a line confirmed by Enter: {@code w}/{@code up},
+ * {@code s}/{@code down}, {@code a}/{@code left} or {@code d}/{@code right}. Unknown input is
+ * ignored. The map can only be finished by solving it.
+ */
 public class DebugUi implements Ui {
   
   private static final Map<FieldType, String> SPRITES = Map.ofEntries(
@@ -32,11 +40,22 @@ public class DebugUi implements Ui {
   
   private final BoardState board;
   
+  /**
+   * Creates the interface for one map.
+   *
+   * @param map map string, see {@link BoardState}
+   */
   public DebugUi(final String map) {
     this.processor = new SokobanProcessor();
     this.board = processor.initialize(map);
   }
   
+  /**
+   * {@inheritDoc}
+   *
+   * <p>
+   * Always returns {@link PlayResult#VICTORY}, as this interface offers no way to leave the map.
+   */
   @Override
   public PlayResult start() throws UiException {
     try {
@@ -72,6 +91,9 @@ public class DebugUi implements Ui {
     }
   }
   
+  /**
+   * Clears the console and prints the board.
+   */
   private void drawBoard(final BoardState board1) {
     clearScreen();
     
@@ -85,6 +107,9 @@ public class DebugUi implements Ui {
     }
   }
   
+  /**
+   * Clears the console using ANSI escape sequences (cursor home + erase screen).
+   */
   private void clearScreen() {
     System.out.print("\033[H\033[2J");
     System.out.flush();
