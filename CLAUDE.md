@@ -4,20 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Console Sokoban game in Java 21 (Maven, Lombok, SLF4J/Logback, JNA). Built from an in-house "simple JAR without Spring" archetype; `README-FIRST.TXT` (Czech) describes the archetype rules. Some comments and commit messages are in Czech.
+Console Sokoban game in Java 21 (Maven, Lombok, SLF4J/Logback, JNA). Built from an in-house "simple JAR without Spring" archetype; its rules are summarized below (the original `README-FIRST.TXT` has been removed). Some comments and commit messages are in Czech.
 
 ## Commands
 
 Use the Maven wrapper (`mvnw.cmd` on Windows, `./mvnw` elsewhere).
 
 - Build + install distributable: `./mvnw clean install` — copies the jar, one-jar fat jar, javadoc/sources jars, `lib/` dependencies and launcher scripts into `build-application/`.
-- Tests: `./mvnw test`; single test: `./mvnw test -Dtest=ClassName#method`.
+- Tests: `./mvnw test`; single test: `./mvnw test -Dtest=ClassName#method`. Current coverage is close to zero: `SampleTest.createMaps` is an empty placeholder, and `WindowsInputTest` is `@DisabledOnOs(WINDOWS)`, so nothing meaningful runs on Windows. `core` has no tests. Test game logic through `BoardState.fromString` (the `|` row separator allows one-line maps) and `SokobanProcessor.play`.
 - SpotBugs runs as part of the build (`check` goal, effort Max, threshold Low, exclusions in `spotbugs-filter.xml`). Suppress individual findings with `@SuppressFBWarnings(value=..., justification=...)`.
 - JaCoCo coverage check runs in the build; the threshold is the `<code-coverage>` property in `pom.xml` (currently `0.0`; archetype rule is 1.0 before customer distribution). `**/core/*` is excluded from coverage — per the archetype rules every exclusion must carry a comment explaining why.
-- Run: `java -jar build-application/sokoban.jar` (or the one-jar under `build-application/onejar/`, or the copied `sokoban.bat` / `sokoban.sh` launchers).
+- Run: `java -jar build-application/sokoban.jar` (or the one-jar under `build-application/onejar/`, or the copied `sokoban.bat` / `sokoban.sh` launchers). The `install` phase also copies `maps/` into `build-application/maps` and `build-application/onejar/maps`. Running `SokobanMain` from the repo root (e.g. in the IDE) finds `maps/original` directly. IDE consoles are not Windows consoles, though, so the game falls back to `DebugUi`; to use the real UI, run the jar in `cmd` or Windows Terminal.
+- `scripts/linux.sh` must keep LF line endings.
 - Surefire runs tests in parallel at class level (`<parallel>classes</parallel>`) — the pom says not to change this; tests must be safe to run concurrently across classes.
 
 Archetype rules for dependencies: after adding a dependency, build immediately so its license can be checked; runtime dependencies may only use architect-approved licenses. Sections of `pom.xml` marked "DO NOT EDIT" are template-managed.
+
+Known `pom.xml` quirks: `jna-platform` is declared twice, and `${java.compiler.param}` (used in compiler args) is not defined. Leave them unless asked to fix them.
 
 ## Architecture
 
@@ -30,7 +33,7 @@ Two layers: an immutable game core and interchangeable console UIs.
 - `Input` enum carries a direction `Point`.
 
 **`ui` — rendering and input loops**
-- `ui.cmd.CmdUi` — primary UI: reads keys directly via the Windows console API (`WindowsInput`, using JNA `Kernel32`, quick edit mode disabled while playing), draws with ANSI clear-screen and block-character sprites. Controls: arrows move, `Y`/`Z` undo (a `Deque` of previous `BoardState`s, only real moves are stored), `F5` restart (clears undo), `PgUp`/`Esc` next map, `PgDown` previous map. Windows-only; throws `IncompatibleUIException` when no Windows console is available (e.g. IDE consoles, non-Windows).
+- `ui.cmd.CmdUi` — primary UI: reads keys directly via the Windows console API (`WindowsInput`, using JNA `Kernel32`, quick edit mode disabled while playing), draws with ANSI clear-screen. `BoardRenderer` (pure, unit-tested) builds the board rows from block-character sprites, colored with 16-color `AnsiColor` sequences when `WindowsOutput` manages to enable virtual terminal processing on stdout; if it can't, the board is drawn without colors. Controls: arrows move, `Y`/`Z` undo (a `Deque` of previous `BoardState`s, only real moves are stored), `F5` restart (clears undo), `PgUp`/`Esc` next map, `PgDown` previous map. Windows-only; throws `IncompatibleUIException` when no Windows console is available (e.g. IDE consoles, non-Windows).
 - `ui.debug.DebugUi` — fallback line-based UI (`w/a/s/d` or `up/down/left/right` + Enter) via `Scanner`; no undo or map navigation, always returns `VICTORY`.
 - Both implement `ui.common.Ui`; `start()` returns a `PlayResult` (`NEXT_MAP`, `PREVIOUS_MAP`, `VICTORY`).
 
@@ -39,7 +42,7 @@ Two layers: an immutable game core and interchangeable console UIs.
 - Plays maps in order according to the `PlayResult`; solved maps are tracked for the run (shown as "THIS MAP WAS COMPLETED"). After the last map it continues with the first unsolved one; the game ends when all maps are solved.
 - Each map tries `CmdUi` and falls back to `DebugUi` on `IncompatibleUIException`.
 
-`maps/original` contains 60 `*.map` files split from `src/test/resources/maps.txt` (levels separated by blank lines; the split code is commented out in `SampleTest`). `maps/custom` is currently empty.
+`maps/original` contains 60 `*.map` files split from `src/test/resources/maps.txt` (levels separated by blank lines; the split code is commented out in `SampleTest`, and its target paths are outdated). `maps/custom` is currently empty.
 
 ## Code style
 

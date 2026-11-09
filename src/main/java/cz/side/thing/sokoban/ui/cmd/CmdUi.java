@@ -2,14 +2,11 @@ package cz.side.thing.sokoban.ui.cmd;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
 import cz.side.thing.sokoban.core.BoardState;
-import cz.side.thing.sokoban.core.BoardState.Field;
-import cz.side.thing.sokoban.core.FieldType;
 import cz.side.thing.sokoban.core.Input;
 import cz.side.thing.sokoban.core.SokobanProcessor;
 import cz.side.thing.sokoban.ui.cmd.WindowsInput.Key;
@@ -34,12 +31,6 @@ import lombok.Cleanup;
  * </ul>
  */
 public class CmdUi implements Ui {
-  
-  private static final Map<FieldType, String> SPRITES = Map.ofEntries(
-      Map.entry(FieldType.WALL, "█"), Map.entry(FieldType.VOID, " "),
-      Map.entry(FieldType.CRATE, "▒"), Map.entry(FieldType.TARGET, "X"),
-      Map.entry(FieldType.CRATE_ON_TARGET, "▓"), Map.entry(FieldType.FLOOR, " "),
-      Map.entry(FieldType.PLAYER, "I"), Map.entry(FieldType.PLAYER_ON_TARGET, "T"));
   
   private static final Map<Key, Input> INPUTS = Map.of(Key.UP, Input.UP, Key.DOWN, Input.DOWN,
       Key.LEFT, Input.LEFT, Key.RIGHT, Input.RIGHT);
@@ -81,11 +72,14 @@ public class CmdUi implements Ui {
     try {
       @Cleanup
       final WindowsInput in = new WindowsInput();
-      
+      // Created after the input, which already rejects non-console environments.
+      @Cleanup
+      final WindowsOutput out = new WindowsOutput();
+
       BoardState board = this.board;
-      
+
       while (!board.isWon()) {
-        drawBoard(board);
+        drawBoard(board, out.isVtEnabled());
         
         final Key key = in.readKey();
         
@@ -152,16 +146,14 @@ public class CmdUi implements Ui {
   
   /**
    * Clears the console and prints the board followed by the map name.
+   *
+   * @param board1 board to draw
+   * @param colors whether the console supports ANSI colors
    */
-  private void drawBoard(final BoardState board1) {
+  private void drawBoard(final BoardState board1, final boolean colors) {
     clearScreen();
-    
-    for (final List<Field> row : board1.getFields()) {
-      
-      final StringBuilder str = new StringBuilder();
-      row.forEach(it -> str.append(SPRITES.get(it.type())));
-      System.out.println(str);
-    }
+
+    BoardRenderer.render(board1, colors).forEach(System.out::println);
     
     System.out.println(StringUtils.EMPTY);
     System.out.printf("Map name: %s%s%n", name,
